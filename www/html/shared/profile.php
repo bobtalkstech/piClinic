@@ -42,13 +42,13 @@ MESSAGE;
 }
 require_once dirname(__FILE__).'/piClinicConfig.php';
 
-define('PROFILE_END','End',false);
-define('PROFILE_ERROR_TOKEN','Error_token',false);
-define('PROFILE_ERROR_PARAMS','Error_params',false);
-define('PROFILE_ERROR_KEY','Error_key',false);
-define('PROFILE_ERROR_UPDATE','Error_update',false);
-define('PROFILE_ERROR_NOTFOUND','Error_notfound',false);
-define('PROFILE_ERROR_DELETED','Error_deleted',false);
+define('PROFILE_END','end',false);
+define('PROFILE_ERROR_TOKEN','error_token',false);
+define('PROFILE_ERROR_PARAMS','error_params',false);
+define('PROFILE_ERROR_KEY','error_key',false);
+define('PROFILE_ERROR_UPDATE','error_update',false);
+define('PROFILE_ERROR_NOTFOUND','error_notfound',false);
+define('PROFILE_ERROR_DELETED','error_deleted',false);
 
 /*
 * 	Profile log
@@ -68,7 +68,7 @@ function profileLogClose(&$profileInfo, $script, $inputParamList = null, $profil
 	$profileInfo[$profileEnd] = microtime(true);
 	if (!API_PROFILE) {
 		// if no logging is desired, return now
-		return;
+		return false;
 	}
 	$logFileName =  API_LOG_FILEPATH . "cts-profile-" . date ('Y-m-d') . ".jlog";
 	// open the file for append access and create a new one if this one doesn't exist
@@ -84,16 +84,20 @@ function profileLogClose(&$profileInfo, $script, $inputParamList = null, $profil
 		$logRecord['params'] = $inputParamList;
 		// try to identify the user
 		$localUser = '';
-		if (!isset($_SESSION)) { 
-			session_start(); 
-		}
-		if (isset($_SESSION['Username'])) {
+		// use the username if available
+		if (!empty($_SESSION['Username'])) {
 			$localUser = $_SESSION['Username'];
-		}		
+		} else {
+		    // otherwise, check for a token
+            if (!empty($_SERVER['HTTP_X_PICLINIC_TOKEN'])) {
+                $localUser = $_SERVER['HTTP_X_PICLINIC_TOKEN'];
+            }
+        }
+
 		$logRecord['user'] = $localUser;
 		$logRecord['method'] = $_SERVER['REQUEST_METHOD'];
-		$logRecord['addr'] = (!empty($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '' );
-		$logRecord['referrer'] = (!empty($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '' );
+		$logRecord['addr'] = (!empty($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'Not found' );
+		$logRecord['referrer'] = (!empty($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'Not found' );
 		$logRecord['profile'] = [];
 		
 		$profileStartTime = $profileInfo['start'];
